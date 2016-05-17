@@ -25,9 +25,9 @@ struct Record {
     int i_index;
 };
 
-int initRecord(struct *p_record);
+int initRecord(struct Record *p_record);
 
-int checkDuplicated(struct *p_record, int input);
+int checkDuplicated(struct Record *p_record, int input);
 
 int main()
 {
@@ -63,19 +63,14 @@ int main()
  @param - p_record : pointer of Record structure.
  @return - 0 : Successful, 1 : Error
  */
-int initRecord(struct *p_record)
+int initRecord(struct Record *p_record)
 {
     //TODO : realize when Record sturucter is used for priority in space
 
-    if(*p_record == NULL)
+    if(p_record == NULL)
     {
         printf("ERR : p_record is null pointer.\n");
         return 1;
-    }
-
-    if(p_record->p_recordMap != NULL) {
-      free(p_record->p_recordMap);
-      p_record->p_recordMap = NULL;
     }
 
     p_record->p_recordMap = (int*)malloc(sizeof(int) * RECORD_SIZE / INDEX_SIZE);
@@ -91,7 +86,7 @@ int initRecord(struct *p_record)
           input : input number
  @return - 0 : input is UNIQUE, 1 : input is DUPLIcated.
  */
-int checkDuplicated(struct *p_record, int input)
+int checkDuplicated(struct Record *p_record, int input)
 {
     //TODO : realize body.
 }
