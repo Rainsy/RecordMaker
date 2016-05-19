@@ -5,11 +5,11 @@
  *
  ************************/
 
-// INDEX_SIZE : The number of index
-// RANGE_SIZE : The range of value (MAX - MIN + 1) regardless of index
+// REFER_SIZE : The number of Reference index
+// RECORD_SIZE : The range of record value (MAX - MIN + 1) regardless of index
 
-#define INDEX_SIZE	10000
-#define RANGE_SIZE	10000
+#define REFER_SIZE	2
+#define RECORD_SIZE	100000
 
 #define UNIQUE  0
 #define DUPLI   1
@@ -19,32 +19,31 @@
 #include <math.h>
 
 // Data structure. used for priority in time or space.
-// ex) indexSize := recordSize    -> priority in time
-// ex) indexSize := 0             -> priority in space
-// ex) indexSize := recordSize/2  -> priortty in time (or space) as 50%
+// ex) referSize := recordSize    -> priority in time
+// ex) referSize := 0             -> priority in space
+// ex) referSize := recordSize/2  -> priortty in time (or space) as 50%
 struct Record {
 	// p_referMap : pointer of resource (reference map) which is used to store reference count.
-	// i_indexSize : The number of index, The value 0(zero) means that this program operates as priority in space.
-	// i_rangeSize : The range of value (MAX - MIN + 1) regardless of index
-	// i_index : current index pointer indexing p_recordArr;
-	// i_indexRefer : current index pointer indexing p_referMap
-	// i_maxCount : the maximum counter which one row of record will be able to store. 
+	// i_referSize : The number of Reference index, The value 0(zero) means that this program operates as priority in space.
+	// i_arraySize : The number of repeat count which equal to array size as twosise
+	// i_recordSize : The range of record value (MAX - MIN + 1) regardless of index
+	// i_referIndex : Current index pointer indexing p_referMap
+	// i_arrayIndex : Current index pointer indexing p_recordArr;
+	// i_maxCount : The maximum counter which one row of record will be able to store. 
+	// i_recordSize : The range of record value (MAX - MIN + 1) regardless of index
     int *p_referMap;
 	int *p_recordArr;
-    int i_indexSize;
-    int i_rangeSize;
-    int i_index;
-	int i_IndexRefer;
+    int i_referSize;
 	int i_arraySize;
+	int i_referIndex;
+    int i_arrayIndex;
 	int i_maxCount;
+    int i_recordSize;
 };
 
 int initRecord(struct Record *p_record, int _arraySize);
-
 int checkDuplicated(struct Record *p_record, int input);
-
 int addValue(struct Record *p_record);
-
 void printRecord(const struct Record *p_record);
 
 int main(int argc, char** argv)
@@ -68,7 +67,7 @@ int main(int argc, char** argv)
 	// Instead, Increases in the case that is not duplicated.
     for(i=0; i<repeat  ; )
     {
-        randRecord = rand() % RANGE_SIZE;
+        randRecord = rand() % RECORD_SIZE;
 
         if( checkDuplicated(&r1, randRecord) == DUPLI )
         {
@@ -79,7 +78,7 @@ int main(int argc, char** argv)
         else
         {
             // TODO:Add record to r1 structure.
-
+			addValue(&r1);
             // To repeat for loop, increase i
             i++;
         }
@@ -100,7 +99,7 @@ int initRecord(struct Record *p_record, int _arraySize)
 {
     //TODO : realize when Record sturucter is used for priority in space
 	//TODO : calculate maxCount by using math.h and log()
-	//TODO : branch when INDEX_SIZE is 0 (priority in space)
+	//TODO : branch when REFER_SIZE is 0 (priority in space)
 
     if(p_record == NULL)
     {
@@ -122,13 +121,16 @@ int initRecord(struct Record *p_record, int _arraySize)
 		p_record->p_recordArr = NULL;
 	}
 
-	p_record->i_rangeSize = RANGE_SIZE;
-	p_record->i_indexSize = INDEX_SIZE;
-	p_record->i_IndexRefer = 0;
+	p_record->i_recordSize = RECORD_SIZE;
+	p_record->i_referSize = REFER_SIZE;
+	p_record->i_referIndex = 0;
 	p_record->i_arraySize = _arraySize;
-	p_record->p_recordArr = (int*)malloc(sizeof(int) * _arraySize);
+	// p_recordArr has pointed twosise of arraySize
+	// ex) NTxxxxx yy
+	// First of reference is 'xxxxx' and Second is 'yy'
+	p_record->p_recordArr = (int*)malloc(sizeof(int) * _arraySize * 2);
 
-	if (p_record->i_indexSize == 0)
+	if (p_record->i_referSize == 0)
 	{
 		// priority in space
 		// none using addtional memory space
@@ -137,7 +139,7 @@ int initRecord(struct Record *p_record, int _arraySize)
 	else    // this case needs to additional memory space
 	{
 		// calculate maxCount
-		int exponent = (int)(log2(RANGE_SIZE) - log2(INDEX_SIZE) + 1);
+		int exponent = (int)(log2(RECORD_SIZE) - log2(REFER_SIZE) + 1);
 		p_record->i_maxCount = (int)pow(2, exponent);
 
 		// for alpha test version, exponent means row size of record.
@@ -151,8 +153,8 @@ int initRecord(struct Record *p_record, int _arraySize)
 
 		// The expression 'sizeof(int)' is in need of optimization to 'exponent'.
 		// But considering trade off, if the coverage is not over 'exponent', 'sizeof(int)' is better,
-		p_record->p_referMap = (int*)calloc(INDEX_SIZE, sizeof(int));
-		p_record->i_index = 0;
+		p_record->p_referMap = (int*)calloc(REFER_SIZE, sizeof(int));
+		p_record->i_arrayIndex = 0;
 	}
     return 0;
 }
@@ -166,16 +168,37 @@ int initRecord(struct Record *p_record, int _arraySize)
 int checkDuplicated(struct Record *p_record, int input)
 {
     //TODO : realize body.
+	return UNIQUE;
 }
 
 /**
  @brief - Add random value.
  @param - p_record : pointer of Record Structure.
  @return - 0 : Successful, 1 : Error.
-*/
+**/
 int addValue(struct Record *p_record)
 {
 	//TODO : realize body.
+	//TODO : check whether p_arr is full or able to add
+	//TODO : returnsucessful or not
+	int index;
+	int *p_arr;
+
+	index = p_record->i_arrayIndex;
+	p_arr = p_record->p_recordArr;
+
+	if (index / 2 >= p_record->i_arraySize)
+	{
+		// Aleady array is full
+		return 1;
+	}
+
+	p_arr[index] = rand() % RECORD_SIZE;
+	p_arr[index + 1] = (rand() % 20) * 5;
+
+	p_record->i_arrayIndex += 2;
+
+	return 0;
 }
 
 /**
@@ -186,4 +209,9 @@ int addValue(struct Record *p_record)
 void printRecord(const struct Record * p_record)
 {
 	//TODO : realize body
+
+	for (int i = 0; i < p_record->i_arraySize * 2; i+=2)
+	{
+		printf("NT%05d %02d\n", p_record->p_recordArr[i], p_record->p_recordArr[i + 1]);
+	}
 }
