@@ -8,8 +8,8 @@
 // REFER_SIZE : The number of Reference index
 // RECORD_SIZE : The range of record value (MAX - MIN + 1) regardless of index
 
-#define REFER_SIZE	100
-#define RECORD_SIZE	100
+#define REFER_SIZE	1000
+#define RECORD_SIZE	100000
 
 #define UNIQUE  0
 #define DUPLI   1
